@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0b0a">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Résultats du sondage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { overflow: auto; height: auto; min-height: 100dvh; }
+    .r-wrap { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; padding: calc(28px + var(--safe-t)) var(--gutter) calc(48px + var(--safe-b)); }
+
+    /* --- Candado --- */
+    .lock { min-height: calc(100dvh - 80px); display: grid; place-items: center; text-align: center; }
+    .lock__box { width: 100%; max-width: 360px; }
+    .lock__title { font-family: var(--serif); font-weight: 600; font-size: clamp(2.2rem, 10vw, 3.4rem); line-height: 1; margin: 0 0 8px; }
+    .lock__title em { color: var(--gold); }
+    .lock__sub { color: var(--cream-3); margin: 0 0 26px; font-size: 14px; }
+    .lock form { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+    .lock .field__input { font-size: 18px; letter-spacing: 0.2em; }
+    .lock__err { min-height: 20px; color: var(--terra); font-size: 13px; margin: 0; }
+
+    /* --- Dashboard --- */
+    .dash { display: none; }
+    .dash.is-open { display: block; }
+    .dash__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .dash__title { margin: 0; font-family: var(--serif); font-weight: 600; font-size: clamp(2.2rem, 9vw, 3.6rem); line-height: 1; }
+    .dash__title em { color: var(--gold); }
+    .dash__meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .badge { font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--cream-2); }
+    .badge--live { border-color: rgba(201,164,92,.5); color: var(--gold-2); }
+    .badge--warn { border-color: rgba(181,101,63,.6); color: #e39a74; }
+    .btn--sm { min-height: 40px; padding: 0 16px; font-size: 14px; }
+
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } .span-2 { grid-column: 1 / -1; } }
+
+    .panel { background: rgba(21,17,15,.82); border: 1px solid var(--line); border-radius: 20px; padding: 20px 18px; overflow: hidden; }
+    .panel__k { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); margin: 0 0 4px; }
+    .panel__t { font-family: var(--serif); font-weight: 600; font-size: 22px; line-height: 1.15; margin: 0 0 18px; color: var(--cream); }
+
+    .hero { display: flex; align-items: center; gap: 18px; }
+    .hero__n { font-family: var(--serif); font-weight: 700; font-size: 76px; line-height: .9; color: var(--gold-2); font-variant-numeric: tabular-nums; }
+    .hero__l { color: var(--cream-2); font-size: 15px; }
+
+    /* Barras horizontales (una sola serie → sin leyenda, etiquetas directas) */
+    .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+    .bar__top { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-bottom: 6px; }
+    .bar__label { color: var(--cream); }
+    .bar__val { color: var(--cream-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .bar__val b { color: var(--cream); font-weight: 600; }
+    .bar__track { position: relative; height: 12px; border-radius: 4px; background: rgba(243,233,220,.07); }
+    .bar__fill { position: absolute; inset: 0; border-radius: 4px; background: var(--gold); transform: scaleX(0); transform-origin: left center; }
+    .bar.is-top .bar__fill { background: var(--gold-2); }
+    .bar:hover .bar__track { background: rgba(243,233,220,.12); }
+
+    /* Conteo Q2 */
+    .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 560px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+    .tile { padding: 14px; border-radius: 14px; background: rgba(243,233,220,.04); border: 1px solid var(--line); }
+    .tile__n { font-family: var(--serif); font-weight: 700; font-size: 40px; line-height: 1; color: var(--cream); font-variant-numeric: tabular-nums; }
+    .tile__l { font-size: 14px; color: var(--cream); margin-top: 4px; }
+    .tile__p { font-size: 12px; color: var(--cream-3); }
+    .tile__bar { margin-top: 10px; height: 4px; border-radius: 4px; background: rgba(243,233,220,.08); overflow: hidden; }
+    .tile__bar i { display: block; height: 100%; background: var(--gold); border-radius: 4px; transform: scaleX(0); transform-origin: left center; }
+
+    /* Promedio Q4 */
+    .avg { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 22px; }
+    .avg__n { font-family: var(--serif); font-weight: 700; font-size: 84px; line-height: .85; color: var(--gold-2); font-variant-numeric: tabular-nums; }
+    .avg__n small { font-size: 28px; color: var(--cream-3); font-weight: 500; }
+    .avg__gauge { flex: 1; min-width: 200px; }
+    .gauge { position: relative; height: 10px; border-radius: 6px; background: rgba(243,233,220,.08); }
+    .gauge__fill { position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(90deg, var(--terra), var(--gold)); transform: scaleX(0); transform-origin: left center; }
+    .gauge__ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--cream-3); margin-top: 6px; }
+    .dist { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-items: end; height: 110px; margin-top: 22px; }
+    .dist__col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+    .dist__bar { width: 100%; max-width: 46px; border-radius: 4px 4px 0 0; background: var(--gold); transform: scaleY(0); transform-origin: bottom center; min-height: 2px; }
+    .dist__n { font-size: 12px; color: var(--cream-2); font-variant-numeric: tabular-nums; }
+    .dist__x { font-size: 12px; color: var(--cream-3); }
+
+    /* Q5 */
+    .quotes { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    @media (min-width: 760px) { .quotes { grid-template-columns: 1fr 1fr; } }
+    .quote { padding: 14px 16px; border-radius: 14px; background: rgba(243,233,220,.04); border-left: 2px solid var(--gold); }
+    .quote__t { font-family: var(--serif); font-size: 20px; font-style: italic; line-height: 1.25; color: var(--cream); word-break: break-word; }
+    .quote__a { margin-top: 6px; font-size: 12.5px; color: var(--cream-3); }
+
+    .empty { text-align: center; padding: 40px 10px; color: var(--cream-2); }
+    .empty p { margin: 0 0 16px; }
+    .r-foot { margin-top: 26px; text-align: center; font-size: 12px; color: var(--cream-3); }
+    .r-foot a { color: var(--cream-3); }
+
+    .tip { position: fixed; z-index: 60; pointer-events: none; padding: 6px 10px; border-radius: 8px; background: #241c17; border: 1px solid var(--line); font-size: 12.5px; color: var(--cream); opacity: 0; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="bg__blobs">
+      <div class="blob blob--a"></div>
+      <div class="blob blob--b"></div>
+      <div class="blob blob--c"></div>
+    </div>
+    <div class="bg__grain"></div>
+  </div>
+
+  <div class="r-wrap">
+    <!-- ===== Candado ===== -->
+    <section class="lock" id="lock">
+      <div class="lock__box">
+        <h1 class="lock__title">Les <em>résultats</em></h1>
+        <p class="lock__sub">Accès réservé. Entre le mot de passe.</p>
+        <form id="lockForm" autocomplete="off">
+          <label class="field" for="pw">
+            <input class="field__input" id="pw" type="password" placeholder="Mot de passe" aria-label="Mot de passe" enterkeyhint="go">
+            <span class="field__line"></span>
+          </label>
+          <p class="lock__err" id="lockErr" role="alert"></p>
+          <button class="btn btn--primary" type="submit"><span class="btn__label">Entrer</span></button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== Dashboard ===== -->
+    <section class="dash" id="dash">
+      <header class="dash__head">
+        <div>
+          <p class="panel__k">Sondage · L'IA et nous</p>
+          <h1 class="dash__title">Les <em>résultats</em></h1>
+        </div>
+        <div class="dash__meta">
+          <span class="badge" id="srcBadge">—</span>
+          <button class="btn btn--ghost btn--sm" id="refreshBtn" type="button">Actualiser</button>
+        </div>
+      </header>
+
+      <div id="content"></div>
+      <p class="r-foot"><a href="./">← Retour au sondage</a></p>
+    </section>
+  </div>
+
+  <div class="tip" id="tip" role="tooltip"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+  <!-- script.js comparte SHEET_ENDPOINT, la contraseña y el almacenamiento local -->
+  <script src="script.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const S = window.Sondage;
+    const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const $ = (s, el = document) => el.querySelector(s);
+    const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+    const SESSION_KEY = "sondageIA.unlocked";
+
+    /* ---------- Candado ---------- */
+    const lock = $("#lock"), dash = $("#dash");
+    function unlocked() { try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) { return false; } }
+    $("#lockForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if ($("#pw").value === S.RESULTS_PASSWORD) {
+        try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (err) {}
+        gsap.to(lock, { autoAlpha: 0, y: -20, duration: REDUCED ? 0.1 : 0.5, ease: "power2.in", onComplete: open });
+      } else {
+        $("#lockErr").textContent = "Mot de passe incorrect.";
+        if (!REDUCED) gsap.fromTo(".lock .field", { x: -10 }, { x: 0, duration: 0.6, ease: "elastic.out(1.6, 0.2)" });
+      }
+    });
+    function open() {
+      lock.style.display = "none";
+      dash.classList.add("is-open");
+      if (!REDUCED) gsap.from(".dash__head > *", { y: 20, opacity: 0, duration: 0.8, stagger: 0.1, ease: "expo.out" });
+      load();
+      if (S.SHEET_ENDPOINT) setInterval(load, 30000); // actualización automática en vivo
+    }
+
+    /* ---------- Datos ---------- */
+    function normalize(r) {
+      const q2 = Array.isArray(r.q2) ? r.q2 : String(r.q2 || "").split(/\s*,\s*/).filter(Boolean);
+      return {
+        id: r.id || "",
+        date: r.date || "",
+        prenom: String(r.prenom || "").trim(),
+        q1: String(r.q1 || "").trim(),
+        q2,
+        q3: String(r.q3 || "").trim(),
+        q4: Number(r.q4) || null,
+        q5: String(r.q5 || "").trim(),
+      };
+    }
+    async function fetchRows() {
+      if (!S.SHEET_ENDPOINT) return { rows: S.Store.all(), source: "local" };
+      try {
+        const url = S.SHEET_ENDPOINT + (S.SHEET_ENDPOINT.includes("?") ? "&" : "?") + "t=" + Date.now();
+        const res = await fetch(url);
+        const json = await res.json();
+        if (!json || !Array.isArray(json.rows)) throw new Error("format");
+        return { rows: json.rows, source: "sheet" };
+      } catch (err) {
+        console.warn("Lecture Google Sheets impossible :", err);
+        return { rows: S.Store.all(), source: "fallback" };
+      }
+    }
+    function demoRows() {
+      const names = ["Camille", "Lucas", "Inès", "Hugo", "Léa", "Nathan", "Chloé", "Mateo", "Sofía", "Jules", "Emma", "Tomás"];
+      const q5 = ["On devient paresseux", "Les fausses informations", "Perdre des emplois", "On ne réfléchit plus par soi-même", "Les fausses informations", "Tricher aux examens"];
+      const pick = (a) => a[Math.floor(Math.random() * a.length)];
+      return names.map((n, i) => ({
+        id: "demo-" + i, prenom: n,
+        q1: pick(["Une fois par semaine", "Plusieurs fois par semaine", "Plusieurs fois par semaine", "Tous les jours", "Tous les jours", "Jamais"]),
+        q2: ["ChatGPT", "Gemini", "Claude", "Copilot", "Meta AI", "Autre"].filter((t, k) => Math.random() < [0.85, 0.45, 0.3, 0.2, 0.25, 0.1][k]).join(", ") || "ChatGPT",
+        q3: pick(S.QUESTIONS[2].options),
+        q4: 1 + Math.floor(Math.random() * 5),
+        q5: pick(q5),
+      }));
+    }
+
+    let busy = false;
+    async function load(demo) {
+      if (busy) return;
+      busy = true;
+      const { rows, source } = demo ? { rows: demoRows(), source: "demo" } : await fetchRows();
+      const badge = $("#srcBadge");
+      badge.className = "badge";
+      if (source === "sheet") { badge.textContent = "● En direct · Google Sheets"; badge.classList.add("badge--live"); }
+      else if (source === "fallback") { badge.textContent = "Sheets inaccessible · données locales"; badge.classList.add("badge--warn"); }
+      else if (source === "demo") { badge.textContent = "Données de démo"; badge.classList.add("badge--warn"); }
+      else { badge.textContent = "Données locales (cet appareil)"; }
+      render(rows.map(normalize).filter((r) => r.q1 || r.q2.length || r.q3 || r.q4 || r.q5));
+      busy = false;
+    }
+    $("#refreshBtn").addEventListener("click", () => load());
+
+    /* ---------- Render ---------- */
+    const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+    const pct = (n, total) => total ? Math.round((n / total) * 100) : 0;
+
+    function panel(kicker, title, extra) {
+      const p = el("section", "panel" + (extra ? " " + extra : ""));
+      p.append(el("p", "panel__k", kicker), el("h2", "panel__t", title));
+      return p;
+    }
+    function barList(counts, total) {
+      const max = Math.max(1, ...counts.map((c) => c.n));
+      const ul = el("ul", "bars");
+      counts.forEach((c) => {
+        const li = el("li", "bar" + (c.n === max && c.n > 0 ? " is-top" : ""));
+        const top = el("div", "bar__top");
+        const val = el("span", "bar__val");
+        const b = el("b", "count", "0");
+        b.dataset.to = c.n;
+        val.append(b, document.createTextNode(` · ${pct(c.n, total)} %`));
+        top.append(el("span", "bar__label", c.label), val);
+        const track = el("div", "bar__track");
+        const fill = el("div", "bar__fill");
+        fill.dataset.scale = c.n / max;
+        track.appendChild(fill);
+        li.dataset.tip = `${c.label} : ${c.n} réponse${c.n > 1 ? "s" : ""} (${pct(c.n, total)} %)`;
+        li.append(top, track);
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+    function countBy(rows, key, options) {
+      return options.map((o) => ({ label: o, n: rows.filter((r) => r[key] === o).length }));
+    }
+
+    function render(rows) {
+      const content = $("#content");
+      content.textContent = "";
+      const total = rows.length;
+
+      if (!total) {
+        const empty = el("div", "panel empty");
+        empty.append(el("p", null, "Aucune réponse pour l'instant."));
+        const demoBtn = el("button", "btn btn--ghost btn--sm", "Voir avec des données de démo");
+        demoBtn.type = "button";
+        demoBtn.addEventListener("click", () => load(true));
+        empty.appendChild(demoBtn);
+        content.appendChild(empty);
+        gsap.from(empty, { y: 20, opacity: 0, duration: 0.6 });
+        return;
+      }
+
+      const grid = el("div", "grid");
+
+      // Participantes
+      const pHero = panel("Participation", "Nombre de réponses", "span-2");
+      const hero = el("div", "hero");
+      const heroN = el("div", "hero__n count", "0");
+      heroN.dataset.to = total;
+      hero.append(heroN, el("div", "hero__l", total > 1 ? "camarades ont répondu au sondage." : "camarade a répondu au sondage."));
+      pHero.appendChild(hero);
+      grid.appendChild(pHero);
+
+      // Q1
+      const p1 = panel("Question 1", "À quelle fréquence utilises-tu l'IA ?");
+      p1.appendChild(barList(countBy(rows, "q1", S.QUESTIONS[0].options), total));
+      grid.appendChild(p1);
+
+      // Q3
+      const p3 = panel("Question 3", "Pour quoi utilises-tu l'IA le plus souvent ?");
+      p3.appendChild(barList(countBy(rows, "q3", S.QUESTIONS[2].options), total));
+      grid.appendChild(p3);
+
+      // Q2 (conteo)
+      const p2 = panel("Question 2", "Quels outils d'IA utilisez-vous ?", "span-2");
+      const tools = S.QUESTIONS[1].options.map((o) => ({ label: o, n: rows.filter((r) => r.q2.includes(o)).length }))
+        .sort((a, b) => b.n - a.n);
+      const tiles = el("div", "tiles");
+      tools.forEach((t) => {
+        const tile = el("div", "tile");
+        const n = el("div", "tile__n count", "0");
+        n.dataset.to = t.n;
+        const bar = el("div", "tile__bar");
+        const i = el("i");
+        i.dataset.scale = total ? t.n / total : 0;
+        bar.appendChild(i);
+        tile.dataset.tip = `${t.label} : ${t.n} personne${t.n > 1 ? "s" : ""}`;
+        tile.append(n, el("div", "tile__l", t.label), el("div", "tile__p", `${pct(t.n, total)} % des participants`), bar);
+        tiles.appendChild(tile);
+      });
+      p2.appendChild(tiles);
+      grid.appendChild(p2);
+
+      // Q4 (promedio)
+      const q4vals = rows.map((r) => r.q4).filter((v) => v >= 1 && v <= 5);
+      const avg = q4vals.length ? q4vals.reduce((a, b) => a + b, 0) / q4vals.length : 0;
+      const p4 = panel("Question 4", "Est-ce que l'IA t'aide à mieux apprendre ?", "span-2");
+      const avgWrap = el("div", "avg");
+      const avgN = el("div", "avg__n");
+      const avgNum = el("span", "count", "0");
+      avgNum.dataset.to = avg.toFixed(1);
+      avgNum.dataset.dec = "1";
+      avgN.append(avgNum, el("small", null, " / 5"));
+      const gaugeWrap = el("div", "avg__gauge");
+      const gauge = el("div", "gauge");
+      const gFill = el("div", "gauge__fill");
+      gFill.dataset.scale = avg / 5;
+      gauge.appendChild(gFill);
+      const ends = el("div", "gauge__ends");
+      ends.append(el("span", null, "1 · Pas du tout"), el("span", null, "5 · Énormément"));
+      gaugeWrap.append(el("p", "hero__l", `Moyenne sur ${q4vals.length} réponse${q4vals.length > 1 ? "s" : ""}`), gauge, ends);
+      avgWrap.append(avgN, gaugeWrap);
+      const dist = el("div", "dist");
+      const dmax = Math.max(1, ...[1, 2, 3, 4, 5].map((v) => q4vals.filter((x) => x === v).length));
+      [1, 2, 3, 4, 5].forEach((v) => {
+        const n = q4vals.filter((x) => x === v).length;
+        const col = el("div", "dist__col");
+        const bar = el("div", "dist__bar");
+        bar.style.height = (n / dmax) * 70 + "%";
+        col.dataset.tip = `Note ${v} : ${n} réponse${n > 1 ? "s" : ""}`;
+        col.append(el("span", "dist__n", n), bar, el("span", "dist__x", v));
+        dist.appendChild(col);
+      });
+      p4.append(avgWrap, dist);
+      grid.appendChild(p4);
+
+      // Q5
+      const p5 = panel("Question 5", "Le plus grand danger de l'IA, selon vous", "span-2");
+      const quotes = el("ul", "quotes");
+      rows.filter((r) => r.q5).slice().reverse().forEach((r) => {
+        const li = el("li", "quote");
+        li.append(el("div", "quote__t", `« ${r.q5} »`), el("div", "quote__a", "— " + (r.prenom || "Anonyme")));
+        quotes.appendChild(li);
+      });
+      if (!quotes.children.length) quotes.appendChild(el("li", "quote", "Pas encore de réponse."));
+      p5.appendChild(quotes);
+      grid.appendChild(p5);
+
+      content.appendChild(grid);
+      animate(content);
+    }
+
+    /* ---------- Animaciones GSAP ---------- */
+    function animate(root) {
+      const d = REDUCED ? 0 : 1;
+      const tl = gsap.timeline();
+      tl.from($$(".panel", root), { y: 40 * d, opacity: 0, duration: 0.8 * d + 0.01, stagger: 0.08 * d, ease: "expo.out" });
+      $$(".bar__fill, .tile__bar i, .gauge__fill", root).forEach((f, i) => {
+        tl.to(f, { scaleX: +f.dataset.scale, duration: 1.4 * d + 0.01, ease: "elastic.out(1, 0.6)" }, 0.3 * d + i * 0.04 * d);
+      });
+      tl.to($$(".dist__bar", root), { scaleY: 1, duration: 1.1 * d + 0.01, ease: "back.out(1.6)", stagger: 0.07 * d }, 0.5 * d);
+      $$(".count", root).forEach((c) => {
+        const to = parseFloat(c.dataset.to) || 0;
+        const dec = +(c.dataset.dec || 0);
+        const o = { v: 0 };
+        tl.to(o, {
+          v: to, duration: 1.4 * d + 0.01, ease: "power3.out",
+          onUpdate: () => { c.textContent = o.v.toFixed(dec).replace(".", ","); },
+        }, 0.3 * d);
+      });
+      tl.from($$(".quote", root), { x: -20 * d, opacity: 0, duration: 0.6 * d + 0.01, stagger: 0.05 * d, ease: "expo.out" }, 0.6 * d);
+    }
+
+    /* ---------- Tooltip al pasar el mouse ---------- */
+    const tip = $("#tip");
+    document.addEventListener("pointermove", (e) => {
+      const t = e.target.closest && e.target.closest("[data-tip]");
+      if (!t || e.pointerType === "touch") { tip.style.opacity = 0; return; }
+      tip.textContent = t.dataset.tip;
+      const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+      tip.style.transform = `translate(${x}px, ${e.clientY + 16}px)`;
+      tip.style.left = "0"; tip.style.top = "0";
+      tip.style.opacity = 1;
+    });
+
+    /* ---------- Fondo ---------- */
+    if (!REDUCED) {
+      $$(".blob").forEach((b) => {
+        const drift = () => gsap.to(b, { xPercent: gsap.utils.random(-15, 15), yPercent: gsap.utils.random(-15, 15), duration: gsap.utils.random(10, 16), ease: "sine.inOut", onComplete: drift });
+        drift();
+      });
+    }
+
+    if (unlocked()) open();
+    else if (matchMedia("(hover: hover)").matches) $("#pw").focus();
+  })();
+  </script>
+</body>
+</html>
